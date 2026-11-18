@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFF9F1">
+<title>Color &amp; Play — Tap-to-Color App</title>
+<meta name="description" content="75 tap-to-color pages for kids. Pick a color, tap a picture, watch it come alive. Works offline, saves on your device.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23FF6B4A'/%3E%3Ccircle cx='22' cy='26' r='8' fill='%23FFD93D'/%3E%3Ccircle cx='42' cy='26' r='8' fill='%232EC4B6'/%3E%3Ccircle cx='32' cy='44' r='8' fill='%23FFFFFF'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#F7F1E6; --shell:#FFF9F1; --card:#FFFFFF; --ink:#1D1A16; --muted:#6F675B;
+    --line:#EDE4D3; --coral:#FF6B4A; --coral-deep:#E8502F; --teal:#17B8A6;
+    --amber:#FFC53D; --blue:#4D96FF; --pink:#FF6FB5;
+    --shadow:0 10px 28px rgba(29,26,22,.09); --shadow-sm:0 4px 14px rgba(29,26,22,.08);
+    --r-lg:24px; --r-md:18px; --r-sm:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.45; min-height:100dvh;
+  }
+  .shell{max-width:480px; margin:0 auto; background:var(--shell); min-height:100dvh;
+    box-shadow:0 0 0 1px rgba(29,26,22,.04), 0 0 60px rgba(29,26,22,.06);}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; padding:0;}
+  button:active{transform:scale(.96);}
+  .hidden{display:none !important;}
+
+  /* ---- phone status bar (a nod to the books) ---- */
+  .statusbar{display:flex; align-items:center; justify-content:space-between;
+    padding:10px 22px 2px; font-size:12.5px; font-weight:700; letter-spacing:.02em;}
+  .statusbar .sicons{display:flex; align-items:center; gap:6px;}
+  .statusbar svg{display:block;}
+
+  /* ---- picker ---- */
+  .hero{padding:14px 22px 6px;}
+  .wordmark{font-size:11px; font-weight:800; letter-spacing:.22em; color:var(--coral-deep);}
+  .hero h1{margin:6px 0 4px; font-size:36px; line-height:1.05; font-weight:800; letter-spacing:-.02em;}
+  .hero h1 .accent{color:var(--coral);}
+  .hero p{margin:0; color:var(--muted); font-size:15px;}
+  .stats{display:flex; gap:8px; padding:14px 22px 4px;}
+  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:var(--r-md);
+    padding:10px 6px; text-align:center; box-shadow:var(--shadow-sm);}
+  .stat b{display:block; font-size:19px; font-weight:800; letter-spacing:-.01em;}
+  .stat span{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .tabs{display:flex; gap:6px; margin:16px 22px 4px; background:#EFE7D8; border-radius:999px; padding:5px;}
+  .tab{flex:1; padding:9px 4px; border-radius:999px; font-size:13px; font-weight:800; color:var(--muted);
+    transition:background .18s ease, color .18s ease, box-shadow .18s ease; text-align:center;}
+  .tab small{display:block; font-size:10px; font-weight:700; letter-spacing:.06em; opacity:.75;}
+  .tab.active{background:var(--ink); color:#fff; box-shadow:0 4px 12px rgba(29,26,22,.25);}
+  .tab .count{font-weight:800;}
+  .howto{display:flex; gap:8px; margin:14px 22px 2px;}
+  .step{flex:1; background:var(--card); border:1px solid var(--line); border-radius:var(--r-md);
+    padding:10px 8px; text-align:center; box-shadow:var(--shadow-sm);}
+  .step .ic{width:34px; height:34px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center;}
+  .step:nth-child(1) .ic{background:#FFE9E3;} .step:nth-child(2) .ic{background:#E2F6F2;} .step:nth-child(3) .ic{background:#FFF3D1;}
+  .step b{display:block; font-size:12px; font-weight:800;}
+  .step span{font-size:11px; color:var(--muted); line-height:1.3; display:block;}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:14px 22px 26px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r-md);
+    padding:8px; text-align:left; box-shadow:var(--shadow-sm); position:relative;
+    transition:transform .15s ease, box-shadow .15s ease;}
+  .card:active{transform:scale(.97);}
+  .card img{width:100%; aspect-ratio:3/2; object-fit:cover; border-radius:var(--r-sm); display:block; background:#F3EDE0;}
+  .card .nm{font-size:11.5px; font-weight:800; line-height:1.25; margin:7px 2px 1px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:28px;}
+  .card .pg{font-size:10.5px; font-weight:700; color:var(--muted); margin:0 2px 2px; letter-spacing:.04em;}
+  .card .done-dot{position:absolute; top:13px; right:13px; width:22px; height:22px; border-radius:50%;
+    background:var(--coral); color:#fff; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 8px rgba(255,107,74,.5); border:2px solid #fff;}
+  .picker-foot{padding:0 22px 30px; text-align:center; color:var(--muted); font-size:13px;}
+  .picker-foot b{color:var(--ink);}
+
+  /* ---- color view ---- */
+  .colorview{padding-bottom:28px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:12px 18px 4px;}
+  .backbtn{display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:800; color:var(--ink);
+    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:8px 14px 8px 10px; box-shadow:var(--shadow-sm);}
+  .pills{display:flex; gap:8px; align-items:center;}
+  .pill{display:flex; align-items:center; gap:6px; border-radius:999px; padding:9px 15px;
+    font-size:12.5px; font-weight:800; letter-spacing:.06em; box-shadow:var(--shadow-sm);}
+  .pill.save{background:var(--ink); color:#fff;}
+  .pill.done{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .pagetitle{padding:10px 22px 0; text-align:center;}
+  .pagetitle h2{margin:0; font-size:25px; font-weight:800; letter-spacing:-.015em; line-height:1.15;}
+  .pagetitle p{margin:5px 0 0; color:var(--muted); font-size:14px;}
+  .canvas-card{margin:16px 18px 0; background:var(--card); border:1px solid var(--line);
+    border-radius:var(--r-lg); padding:10px; box-shadow:var(--shadow);}
+  .canvas-wrap{display:flex; justify-content:center; border-radius:16px; overflow:hidden; background:#fff;}
+  #art{max-width:100%; max-height:52dvh; width:auto; height:auto; display:block; touch-action:none;
+    border-radius:12px; background:#fff;}
+  .canvas-card.loading #art{opacity:.25;}
+  .loading-note{text-align:center; font-size:12.5px; color:var(--muted); padding:8px 0 2px;}
+  .hint{text-align:center; font-size:13px; color:var(--muted); margin:12px 22px 0;}
+  .hint b{color:var(--coral-deep);}
+  .palette{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; padding:14px 22px 2px;}
+  .sw{width:42px; height:42px; border-radius:50%; border:3px solid #fff;
+    box-shadow:0 3px 10px rgba(29,26,22,.18), inset 0 0 0 1px rgba(29,26,22,.08);
+    transition:transform .15s ease, box-shadow .15s ease; position:relative;}
+  .sw.sel{transform:scale(1.18); box-shadow:0 0 0 3px var(--ink), 0 6px 14px rgba(29,26,22,.25);}
+  .sw.eraser{background:#fff; display:flex; align-items:center; justify-content:center;}
+  .sw.eraser.sel{box-shadow:0 0 0 3px var(--coral), 0 6px 14px rgba(29,26,22,.25);}
+  .tools{display:flex; gap:10px; padding:16px 22px 0;}
+  .tool{flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:12px 6px;
+    font-size:13.5px; font-weight:800; box-shadow:var(--shadow-sm);}
+  .tool.save{background:var(--coral); border-color:var(--coral); color:#fff;}
+  .tool.armed{background:#FFF1EC; border-color:var(--coral); color:var(--coral-deep);}
+  .pagenav{display:flex; align-items:center; justify-content:space-between; padding:18px 22px 0;}
+  .navbtn{width:46px; height:46px; border-radius:50%; background:var(--card); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm);}
+  .navbtn:disabled{opacity:.35;}
+  .pagecount{font-size:13px; font-weight:800; letter-spacing:.1em; color:var(--muted);}
+  .pagecount b{color:var(--ink); font-size:15px;}
+  .toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:14px; font-weight:700; padding:11px 20px; border-radius:999px;
+    box-shadow:0 10px 26px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    z-index:50; max-width:86vw; text-align:center;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  @media (min-width:520px){ .shell{border-left:1px solid var(--line); border-right:1px solid var(--line);} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span class="sicons">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#1D1A16"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#1D1A16"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#1D1A16"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#1D1A16"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12"><path d="M8 10.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6ZM8 6.4c-1.5 0-2.9.6-3.9 1.6l1.5 1.5A3.4 3.4 0 0 1 8 8.6c.9 0 1.8.35 2.4.9l1.5-1.5A5.4 5.4 0 0 0 8 6.4ZM8 2.6c-2.5 0-4.9 1-6.6 2.7l1.5 1.5A7.4 7.4 0 0 1 8 4.7c2 0 3.8.8 5.1 2.1l1.5-1.5A9.4 9.4 0 0 0 8 2.6Z" fill="#1D1A16" transform="translate(0,-1)"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="#1D1A16" opacity=".45"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#1D1A16"/><path d="M23.5 4v4a2.2 2.2 0 0 0 0-4Z" fill="#1D1A16" opacity=".45"/></svg>
+    </span>
+  </div>
+
+  <!-- ============ PICKER ============ -->
+  <div id="pickerView">
+    <div class="hero">
+      <div class="wordmark">COLOR STUDIO</div>
+      <h1>Color <span class="accent">&amp;</span> Play</h1>
+      <p>75 tap-to-color pages. Pick a color, tap a picture, and watch it come alive.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>75</b><span>Pages</span></div>
+      <div class="stat"><b>3</b><span>Sets</span></div>
+      <div class="stat"><b>100%</b><span>Yours</span></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Choose a set">
+      <button class="tab active" data-set="set1" role="tab">Set 1<small>Fun &amp; Friends</small></button>
+      <button class="tab" data-set="set2" role="tab">Set 2<small>Animals &amp; Wheels</small></button>
+      <button class="tab" data-set="set3" role="tab">Set 3<small>Bible Stories</small></button>
+    </div>
+    <div class="howto">
+      <div class="step">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8502F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <b>1. Pick a page</b><span>Tap any picture below</span>
+      </div>
+      <div class="step">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17B8A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="#17B8A6" stroke="none"/></svg></div>
+        <b>2. Pick a color</b><span>Bright colors, just for you</span>
+      </div>
+      <div class="step">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9A400" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5a5.5 5.5 0 1 1 6 6L9 23V11.5Z" transform="rotate(45 12 12) translate(0 -1)"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+        <b>3. Tap to fill</b><span>Magic! It colors itself in</span>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="picker-foot">Your coloring <b>saves on this device</b> — come back anytime<br>and keep going right where you stopped.</div>
+  </div>
+
+  <!-- ============ COLOR VIEW ============ -->
+  <div id="colorView" class="colorview hidden">
+    <div class="topbar">
+      <button class="backbtn" id="backBtn" aria-label="Back to all pages">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        All pages
+      </button>
+      <div class="pills">
+        <button class="pill save" id="savePill" aria-label="Save picture">
+          SAVE
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <button class="pill done" id="donePill">DONE</button>
+      </div>
+    </div>
+    <div class="pagetitle">
+      <h2 id="pageTitle"></h2>
+      <p id="pagePrompt"></p>
+    </div>
+    <div class="canvas-card" id="canvasCard">
+      <div class="canvas-wrap">
+        <canvas id="art"></canvas>
+      </div>
+      <div class="loading-note hidden" id="loadingNote">Loading your page…</div>
+    </div>
+    <p class="hint"><b>Pick a color</b>, then tap any part of the picture to fill it.</p>
+    <div class="palette" id="palette"></div>
+    <div class="tools">
+      <button class="tool" id="undoBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        Undo
+      </button>
+      <button class="tool" id="clearBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6"/></svg>
+        <span id="clearLabel">Start over</span>
+      </button>
+      <button class="tool save" id="saveBtn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+        Save picture
+      </button>
+    </div>
+    <div class="pagenav">
+      <button class="navbtn" id="prevBtn" aria-label="Previous page">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="pagecount"><b id="pageNum">1 / 25</b><br><span id="setName">SET 1</span></div>
+      <button class="navbtn" id="nextBtn" aria-label="Next page">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+'use strict';
+/* ================= DATA ================= */
+const PAGES = [{"set": "set1", "num": "01", "title": "DINO ROAR!", "prompt": "What color is YOUR dinosaur? Green? Pink? Rainbow?", "slug": "dino-roar", "w": 1000, "h": 582, "art": "art/set1/01-dino-roar.jpg", "thumb": "thumbs/set1/01-dino-roar.jpg"}, {"set": "set1", "num": "02", "title": "MAGICAL UNICORN", "prompt": "Color the mane like cotton candy. Make the rainbow YOUR colors!", "slug": "magical-unicorn", "w": 1000, "h": 679, "art": "art/set1/02-magical-unicorn.jpg", "thumb": "thumbs/set1/02-magical-unicorn.jpg"}, {"set": "set1", "num": "03", "title": "SPACE CAT", "prompt": "Paint the planets, moon & stars your favorite colors!", "slug": "space-cat", "w": 1000, "h": 703, "art": "art/set1/03-space-cat.jpg", "thumb": "thumbs/set1/03-space-cat.jpg"}, {"set": "set1", "num": "04", "title": "SKATER PUP", "prompt": "Give Pup a cool cap, a funky board, and lots of hearts!", "slug": "skater-pup", "w": 1000, "h": 961, "art": "art/set1/04-skater-pup.jpg", "thumb": "thumbs/set1/04-skater-pup.jpg"}, {"set": "set1", "num": "05", "title": "FRIENDLY ROBOT", "prompt": "What color is Robot's heart? Color the gears & balloon too!", "slug": "friendly-robot", "w": 966, "h": 1000, "art": "art/set1/05-friendly-robot.jpg", "thumb": "thumbs/set1/05-friendly-robot.jpg"}, {"set": "set1", "num": "06", "title": "BLAST OFF!", "prompt": "Color the rocket and count the stars. 1, 2, 3... blast off!", "slug": "blast-off", "w": 1000, "h": 755, "art": "art/set1/06-blast-off.jpg", "thumb": "thumbs/set1/06-blast-off.jpg"}, {"set": "set1", "num": "07", "title": "SWEET TREATS", "prompt": "What's your favorite flavor? Color it! Add sprinkles!", "slug": "sweet-treats", "w": 1000, "h": 732, "art": "art/set1/07-sweet-treats.jpg", "thumb": "thumbs/set1/07-sweet-treats.jpg"}, {"set": "set1", "num": "08", "title": "BUTTERFLY GARDEN", "prompt": "Make each wing a different pattern. Don't forget the bee!", "slug": "butterfly-garden", "w": 1000, "h": 679, "art": "art/set1/08-butterfly-garden.jpg", "thumb": "thumbs/set1/08-butterfly-garden.jpg"}, {"set": "set1", "num": "09", "title": "FRIENDLY DRAGON!", "prompt": "What color is YOUR dragon? Red? Green? Rainbow?", "slug": "friendly-dragon", "w": 1000, "h": 667, "art": "art/set1/09-friendly-dragon.jpg", "thumb": "thumbs/set1/09-friendly-dragon.jpg"}, {"set": "set1", "num": "10", "title": "SEAHORSE SPLASH", "prompt": "What color is YOUR seahorse? Pink? Orange? Rainbow?", "slug": "seahorse-splash", "w": 1000, "h": 667, "art": "art/set1/10-seahorse-splash.jpg", "thumb": "thumbs/set1/10-seahorse-splash.jpg"}, {"set": "set1", "num": "11", "title": "PIRATE SHIP AHOY!", "prompt": "What color is YOUR pirate ship? Black flag or rainbow flag?", "slug": "pirate-ship", "w": 1000, "h": 667, "art": "art/set1/11-pirate-ship.jpg", "thumb": "thumbs/set1/11-pirate-ship.jpg"}, {"set": "set1", "num": "12", "title": "TEDDY BEAR PICNIC", "prompt": "What color is YOUR picnic? What snacks would you pack?", "slug": "teddy-bear-picnic", "w": 1000, "h": 667, "art": "art/set1/12-teddy-bear-picnic.jpg", "thumb": "thumbs/set1/12-teddy-bear-picnic.jpg"}, {"set": "set1", "num": "13", "title": "CHOO-CHOO TRAIN!", "prompt": "What color is YOUR train? Where is it going?", "slug": "choo-choo-train", "w": 1000, "h": 667, "art": "art/set1/13-choo-choo-train.jpg", "thumb": "thumbs/set1/13-choo-choo-train.jpg"}, {"set": "set1", "num": "14", "title": "MAGICAL CASTLE", "prompt": "What color is YOUR castle? Who lives inside?", "slug": "magical-castle", "w": 1000, "h": 667, "art": "art/set1/14-magical-castle.jpg", "thumb": "thumbs/set1/14-magical-castle.jpg"}, {"set": "set1", "num": "15", "title": "WISE LITTLE OWL", "prompt": "What color is YOUR owl? Brown? Blue? Purple?", "slug": "wise-little-owl", "w": 1000, "h": 667, "art": "art/set1/15-wise-little-owl.jpg", "thumb": "thumbs/set1/15-wise-little-owl.jpg"}, {"set": "set1", "num": "16", "title": "CLEVER FOX", "prompt": "What color is YOUR fox? Orange? Or something silly?", "slug": "clever-fox", "w": 1000, "h": 667, "art": "art/set1/16-clever-fox.jpg", "thumb": "thumbs/set1/16-clever-fox.jpg"}, {"set": "set1", "num": "17", "title": "SLOW-AND-STEADY TURTLE", "prompt": "What color is YOUR turtle's shell? Green? Or rainbow?", "slug": "turtle-friend", "w": 1000, "h": 667, "art": "art/set1/17-turtle-friend.jpg", "thumb": "thumbs/set1/17-turtle-friend.jpg"}, {"set": "set1", "num": "18", "title": "LUCKY LADYBUG", "prompt": "What color is YOUR ladybug? Red spots or rainbow spots?", "slug": "lucky-ladybug", "w": 1000, "h": 667, "art": "art/set1/18-lucky-ladybug.jpg", "thumb": "thumbs/set1/18-lucky-ladybug.jpg"}, {"set": "set1", "num": "19", "title": "ICE-CREAM TRUCK", "prompt": "What color is YOUR ice-cream truck? What flavor is best?", "slug": "ice-cream-truck", "w": 1000, "h": 667, "art": "art/set1/19-ice-cream-truck.jpg", "thumb": "thumbs/set1/19-ice-cream-truck.jpg"}, {"set": "set1", "num": "20", "title": "FARM BARN FRIENDS", "prompt": "What color is YOUR barn? Red? Or your favorite color?", "slug": "farm-barn", "w": 1000, "h": 667, "art": "art/set1/20-farm-barn.jpg", "thumb": "thumbs/set1/20-farm-barn.jpg"}, {"set": "set1", "num": "21", "title": "SAILBOAT ADVENTURE", "prompt": "What color is YOUR sailboat's sail? Stripes or stars?", "slug": "sailboat-adventure", "w": 1000, "h": 667, "art": "art/set1/21-sailboat-adventure.jpg", "thumb": "thumbs/set1/21-sailboat-adventure.jpg"}, {"set": "set1", "num": "22", "title": "BRAVE LITTLE KNIGHT", "prompt": "What color is YOUR knight's shield? What is on it?", "slug": "brave-little-knight", "w": 1000, "h": 667, "art": "art/set1/22-brave-little-knight.jpg", "thumb": "thumbs/set1/22-brave-little-knight.jpg"}, {"set": "set1", "num": "23", "title": "FAIRY GARDEN", "prompt": "What color is YOUR fairy's wings? Pink? Blue? Sparkly?", "slug": "fairy-garden", "w": 1000, "h": 667, "art": "art/set1/23-fairy-garden.jpg", "thumb": "thumbs/set1/23-fairy-garden.jpg"}, {"set": "set1", "num": "24", "title": "CAMPING UNDER THE STARS", "prompt": "What color is YOUR campfire? What would you roast?", "slug": "camping-stars", "w": 1000, "h": 667, "art": "art/set1/24-camping-stars.jpg", "thumb": "thumbs/set1/24-camping-stars.jpg"}, {"set": "set1", "num": "25", "title": "SUPERHERO PUP", "prompt": "What color is YOUR superhero pup's cape? What is its superpower?", "slug": "superhero-pup", "w": 1000, "h": 667, "art": "art/set1/25-superhero-pup.jpg", "thumb": "thumbs/set1/25-superhero-pup.jpg"}, {"set": "set2", "num": "01", "title": "HOPPY BUNNY!", "prompt": "What color is your bunny? Pink? White? Rainbow?", "slug": "hoppy-bunny", "w": 1000, "h": 704, "art": "art/set2/01-hoppy-bunny.jpg", "thumb": "thumbs/set2/01-hoppy-bunny.jpg"}, {"set": "set2", "num": "02", "title": "PANDA PAL", "prompt": "Color the bamboo green. Make Panda rainbow if you want!", "slug": "panda-pal", "w": 1000, "h": 681, "art": "art/set2/02-panda-pal.jpg", "thumb": "thumbs/set2/02-panda-pal.jpg"}, {"set": "set2", "num": "03", "title": "ELLIE ELEPHANT", "prompt": "Splash! What color is Ellie's umbrella?", "slug": "ellie-elephant", "w": 1000, "h": 1000, "art": "art/set2/03-ellie-elephant.jpg", "thumb": "thumbs/set2/03-ellie-elephant.jpg"}, {"set": "set2", "num": "04", "title": "PINGU PENGUIN", "prompt": "Color the snow, the scarf, and the little igloo!", "slug": "pingu-penguin", "w": 1000, "h": 649, "art": "art/set2/04-pingu-penguin.jpg", "thumb": "thumbs/set2/04-pingu-penguin.jpg"}, {"set": "set2", "num": "05", "title": "FREDDIE FROG", "prompt": "Ribbit! Color the pond and lily pad bright green!", "slug": "freddie-frog", "w": 1000, "h": 652, "art": "art/set2/05-freddie-frog.jpg", "thumb": "thumbs/set2/05-freddie-frog.jpg"}, {"set": "set2", "num": "06", "title": "LITTLE LION", "prompt": "Roar! Color Lion's mane golden yellow!", "slug": "little-lion", "w": 1000, "h": 667, "art": "art/set2/06-little-lion.jpg", "thumb": "thumbs/set2/06-little-lion.jpg"}, {"set": "set2", "num": "07", "title": "ZOOM RACE CAR!", "prompt": "Vroom! What color is your fastest car?", "slug": "zoom-race-car", "w": 1000, "h": 652, "art": "art/set2/07-zoom-race-car.jpg", "thumb": "thumbs/set2/07-zoom-race-car.jpg"}, {"set": "set2", "num": "08", "title": "UP UP BALLOON!", "prompt": "Float up high! Color the rainbow and clouds!", "slug": "up-up-balloon", "w": 1000, "h": 706, "art": "art/set2/08-up-up-balloon.jpg", "thumb": "thumbs/set2/08-up-up-balloon.jpg"}, {"set": "set2", "num": "09", "title": "CUDDLY KOALA", "prompt": "What color is YOUR koala? Gray? Or something silly?", "slug": "cuddly-koala", "w": 1000, "h": 667, "art": "art/set2/09-cuddly-koala.jpg", "thumb": "thumbs/set2/09-cuddly-koala.jpg"}, {"set": "set2", "num": "10", "title": "TIGER CUB", "prompt": "What color is YOUR tiger cub? Orange stripes or rainbow stripes?", "slug": "tiger-cub", "w": 1000, "h": 667, "art": "art/set2/10-tiger-cub.jpg", "thumb": "thumbs/set2/10-tiger-cub.jpg"}, {"set": "set2", "num": "11", "title": "ZEBRA STRIPES", "prompt": "What color is YOUR zebra? Black and white, or rainbow?", "slug": "zebra-stripes", "w": 1000, "h": 667, "art": "art/set2/11-zebra-stripes.jpg", "thumb": "thumbs/set2/11-zebra-stripes.jpg"}, {"set": "set2", "num": "12", "title": "GENTLE GIRAFFE", "prompt": "What color is YOUR giraffe? How tall is it?", "slug": "gentle-giraffe", "w": 1000, "h": 667, "art": "art/set2/12-gentle-giraffe.jpg", "thumb": "thumbs/set2/12-gentle-giraffe.jpg"}, {"set": "set2", "num": "13", "title": "CHEEKY MONKEY", "prompt": "What color is YOUR monkey? What is it munching?", "slug": "cheeky-monkey", "w": 1000, "h": 667, "art": "art/set2/13-cheeky-monkey.jpg", "thumb": "thumbs/set2/13-cheeky-monkey.jpg"}, {"set": "set2", "num": "14", "title": "DOLPHIN SPLASH", "prompt": "What color is YOUR dolphin? Blue? Pink? Sparkly?", "slug": "dolphin-splash", "w": 1000, "h": 667, "art": "art/set2/14-dolphin-splash.jpg", "thumb": "thumbs/set2/14-dolphin-splash.jpg"}, {"set": "set2", "num": "15", "title": "SCHOOL BUS", "prompt": "What color is YOUR school bus? Yellow, or your favorite color?", "slug": "school-bus", "w": 1000, "h": 667, "art": "art/set2/15-school-bus.jpg", "thumb": "thumbs/set2/15-school-bus.jpg"}, {"set": "set2", "num": "16", "title": "FIRE TRUCK", "prompt": "What color is YOUR fire truck? Red, or something new?", "slug": "fire-truck", "w": 1000, "h": 667, "art": "art/set2/16-fire-truck.jpg", "thumb": "thumbs/set2/16-fire-truck.jpg"}, {"set": "set2", "num": "17", "title": "FARM TRACTOR", "prompt": "What color is YOUR tractor? What is it carrying?", "slug": "farm-tractor", "w": 1000, "h": 667, "art": "art/set2/17-farm-tractor.jpg", "thumb": "thumbs/set2/17-farm-tractor.jpg"}, {"set": "set2", "num": "18", "title": "FLY A KITE!", "prompt": "What color is YOUR kite? Where will it fly?", "slug": "fly-a-kite", "w": 1000, "h": 667, "art": "art/set2/18-fly-a-kite.jpg", "thumb": "thumbs/set2/18-fly-a-kite.jpg"}, {"set": "set2", "num": "19", "title": "POLAR BEAR", "prompt": "What color is YOUR polar bear? White, or rainbow?", "slug": "polar-bear", "w": 1000, "h": 667, "art": "art/set2/19-polar-bear.jpg", "thumb": "thumbs/set2/19-polar-bear.jpg"}, {"set": "set2", "num": "20", "title": "HAPPY HIPPO", "prompt": "What color is YOUR hippo? Purple? Blue? Pink?", "slug": "happy-hippo", "w": 1000, "h": 667, "art": "art/set2/20-happy-hippo.jpg", "thumb": "thumbs/set2/20-happy-hippo.jpg"}, {"set": "set2", "num": "21", "title": "SLEEPY SLOTH", "prompt": "What color is YOUR sloth? What is it dreaming about?", "slug": "sleepy-sloth", "w": 1000, "h": 667, "art": "art/set2/21-sleepy-sloth.jpg", "thumb": "thumbs/set2/21-sleepy-sloth.jpg"}, {"set": "set2", "num": "22", "title": "BUSY BEE", "prompt": "What color is YOUR bee? Yellow and black, or rainbow?", "slug": "busy-bee", "w": 1000, "h": 667, "art": "art/set2/22-busy-bee.jpg", "thumb": "thumbs/set2/22-busy-bee.jpg"}, {"set": "set2", "num": "23", "title": "JET PLANE", "prompt": "What color is YOUR airplane? Where is it flying to?", "slug": "jet-plane", "w": 1000, "h": 667, "art": "art/set2/23-jet-plane.jpg", "thumb": "thumbs/set2/23-jet-plane.jpg"}, {"set": "set2", "num": "24", "title": "HEDGEHOG", "prompt": "What color is YOUR hedgehog? Brown? Or autumn colors?", "slug": "hedgehog", "w": 1000, "h": 667, "art": "art/set2/24-hedgehog.jpg", "thumb": "thumbs/set2/24-hedgehog.jpg"}, {"set": "set2", "num": "25", "title": "OCTOPUS", "prompt": "What color is YOUR octopus? How many colors can it be?", "slug": "octopus", "w": 1000, "h": 667, "art": "art/set2/25-octopus.jpg", "thumb": "thumbs/set2/25-octopus.jpg"}, {"set": "set3", "num": "01", "title": "NOAH'S ARK", "prompt": "What color is YOUR ark? How many animals can you count?", "slug": "noahs-ark", "w": 1000, "h": 667, "art": "art/set3/01-noahs-ark.jpg", "thumb": "thumbs/set3/01-noahs-ark.jpg"}, {"set": "set3", "num": "02", "title": "DAVID & GOLIATH", "prompt": "What color is YOUR slingshot? Is David brave?", "slug": "david-goliath", "w": 1000, "h": 667, "art": "art/set3/02-david-goliath.jpg", "thumb": "thumbs/set3/02-david-goliath.jpg"}, {"set": "set3", "num": "03", "title": "DANIEL & THE LIONS", "prompt": "What color are YOUR lions? Are they friendly?", "slug": "daniel-lions", "w": 1000, "h": 667, "art": "art/set3/03-daniel-lions.jpg", "thumb": "thumbs/set3/03-daniel-lions.jpg"}, {"set": "set3", "num": "04", "title": "JONAH & THE BIG FISH", "prompt": "What color is YOUR big fish? Blue? Or rainbow?", "slug": "jonah-fish", "w": 1000, "h": 667, "art": "art/set3/04-jonah-fish.jpg", "thumb": "thumbs/set3/04-jonah-fish.jpg"}, {"set": "set3", "num": "05", "title": "BABY JESUS IN THE MANGER", "prompt": "What color is YOUR manger? What gift would you bring?", "slug": "baby-jesus-manger", "w": 1000, "h": 667, "art": "art/set3/05-baby-jesus-manger.jpg", "thumb": "thumbs/set3/05-baby-jesus-manger.jpg"}, {"set": "set3", "num": "06", "title": "MOSES & THE RED SEA", "prompt": "What color is YOUR sea? Blue? Or sparkly?", "slug": "moses-red-sea", "w": 1000, "h": 667, "art": "art/set3/06-moses-red-sea.jpg", "thumb": "thumbs/set3/06-moses-red-sea.jpg"}, {"set": "set3", "num": "07", "title": "JOSEPH'S COLORFUL COAT", "prompt": "What colors are in YOUR coat? Make it a rainbow!", "slug": "joseph-coat", "w": 1000, "h": 667, "art": "art/set3/07-joseph-coat.jpg", "thumb": "thumbs/set3/07-joseph-coat.jpg"}, {"set": "set3", "num": "08", "title": "THE GOOD SHEPHERD", "prompt": "What color are YOUR sheep? Fluffy white or rainbow?", "slug": "good-shepherd", "w": 1000, "h": 667, "art": "art/set3/08-good-shepherd.jpg", "thumb": "thumbs/set3/08-good-shepherd.jpg"}, {"set": "set3", "num": "09", "title": "ZACCHAEUS IN THE TREE", "prompt": "What color is YOUR tree? Can you spot Zacchaeus?", "slug": "zacchaeus-tree", "w": 1000, "h": 667, "art": "art/set3/09-zacchaeus-tree.jpg", "thumb": "thumbs/set3/09-zacchaeus-tree.jpg"}, {"set": "set3", "num": "10", "title": "THE PRODIGAL SON", "prompt": "What color is YOUR welcome hug? Who is happiest?", "slug": "prodigal-son", "w": 1000, "h": 667, "art": "art/set3/10-prodigal-son.jpg", "thumb": "thumbs/set3/10-prodigal-son.jpg"}, {"set": "set3", "num": "11", "title": "QUEEN ESTHER", "prompt": "What color is YOUR queen's crown? Gold? Or pink?", "slug": "queen-esther", "w": 1000, "h": 667, "art": "art/set3/11-queen-esther.jpg", "thumb": "thumbs/set3/11-queen-esther.jpg"}, {"set": "set3", "num": "12", "title": "RUTH IN THE FIELDS", "prompt": "What color is YOUR wheat? Gold? Or sunny yellow?", "slug": "ruth-fields", "w": 1000, "h": 667, "art": "art/set3/12-ruth-fields.jpg", "thumb": "thumbs/set3/12-ruth-fields.jpg"}, {"set": "set3", "num": "13", "title": "SAMUEL HEARS GOD", "prompt": "What color is YOUR night sky? How many stars?", "slug": "samuel-voice", "w": 1000, "h": 667, "art": "art/set3/13-samuel-voice.jpg", "thumb": "thumbs/set3/13-samuel-voice.jpg"}, {"set": "set3", "num": "14", "title": "ELIJAH & THE RAVENS", "prompt": "What color are YOUR ravens? What are they carrying?", "slug": "elijah-ravens", "w": 1000, "h": 667, "art": "art/set3/14-elijah-ravens.jpg", "thumb": "thumbs/set3/14-elijah-ravens.jpg"}, {"set": "set3", "num": "15", "title": "THE LOST SHEEP", "prompt": "What color is YOUR lost sheep? Can you find it?", "slug": "lost-sheep", "w": 1000, "h": 667, "art": "art/set3/15-lost-sheep.jpg", "thumb": "thumbs/set3/15-lost-sheep.jpg"}, {"set": "set3", "num": "16", "title": "THE TEN COMMANDMENTS", "prompt": "What color are YOUR stone tablets? Gray? Or gold?", "slug": "ten-commandments", "w": 1000, "h": 667, "art": "art/set3/16-ten-commandments.jpg", "thumb": "thumbs/set3/16-ten-commandments.jpg"}, {"set": "set3", "num": "17", "title": "THE WISE MEN", "prompt": "What color is YOUR star? Gold? Or sparkly?", "slug": "wise-men-star", "w": 1000, "h": 667, "art": "art/set3/17-wise-men-star.jpg", "thumb": "thumbs/set3/17-wise-men-star.jpg"}, {"set": "set3", "num": "18", "title": "THE EMPTY TOMB", "prompt": "What color is YOUR sunrise? He is risen!", "slug": "empty-tomb", "w": 1000, "h": 667, "art": "art/set3/18-empty-tomb.jpg", "thumb": "thumbs/set3/18-empty-tomb.jpg"}, {"set": "set3", "num": "19", "title": "PETER WALKS ON WATER", "prompt": "What color is YOUR water? Blue? Or sparkly?", "slug": "peter-water", "w": 1000, "h": 667, "art": "art/set3/19-peter-water.jpg", "thumb": "thumbs/set3/19-peter-water.jpg"}, {"set": "set3", "num": "20", "title": "JESUS FEEDS THE 5,000", "prompt": "What color are YOUR loaves and fish? How many baskets?", "slug": "feeds-5000", "w": 1000, "h": 667, "art": "art/set3/20-feeds-5000.jpg", "thumb": "thumbs/set3/20-feeds-5000.jpg"}, {"set": "set3", "num": "21", "title": "THE GOOD SAMARITAN", "prompt": "What color is YOUR donkey? Who is helping?", "slug": "good-samaritan", "w": 1000, "h": 667, "art": "art/set3/21-good-samaritan.jpg", "thumb": "thumbs/set3/21-good-samaritan.jpg"}, {"set": "set3", "num": "22", "title": "CREATION \u2014 ANIMALS", "prompt": "What color are YOUR animals? How many can you name?", "slug": "creation-animals", "w": 1000, "h": 667, "art": "art/set3/22-creation-animals.jpg", "thumb": "thumbs/set3/22-creation-animals.jpg"}, {"set": "set3", "num": "23", "title": "ADAM & EVE IN THE GARDEN", "prompt": "What color is YOUR garden? What fruit grows there?", "slug": "adam-eve-garden", "w": 1000, "h": 667, "art": "art/set3/23-adam-eve-garden.jpg", "thumb": "thumbs/set3/23-adam-eve-garden.jpg"}, {"set": "set3", "num": "24", "title": "THE TOWER OF BABEL", "prompt": "What color is YOUR tower? How tall is it?", "slug": "tower-babel", "w": 1000, "h": 667, "art": "art/set3/24-tower-babel.jpg", "thumb": "thumbs/set3/24-tower-babel.jpg"}, {"set": "set3", "num": "25", "title": "THE BURNING BUSH", "prompt": "What color is YOUR burning bush? Orange? Or red?", "slug": "burning-bush", "w": 1000, "h": 667, "art": "art/set3/25-burning-bush.jpg", "thumb": "thumbs/set3/25-burning-bush.jpg"}];
+const SET_NAMES = { set1: 'SET 1 • FUN & FRIENDS', set2: 'SET 2 • ANIMALS & WHEELS', set3: 'SET 3 • BIBLE STORIES' };
+const PALETTE = [
+  ['Red', '#FF5A5A'], ['Orange', '#FF9F43'], ['Sunny Yellow', '#FFD93D'],
+  ['Leaf Green', '#8FD14F'], ['Teal', '#2EC4B6'], ['Sky Blue', '#4D96FF'],
+  ['Purple', '#7B61FF'], ['Pink', '#FF6FB5'], ['Skin Light', '#FFDDBB'],
+  ['Skin Tan', '#C98A5B'], ['Brown', '#8B5E3C'], ['Black', '#222222'],
+  ['White', '#FFFFFF']
+];
+const WALL = 200;              // wall threshold (verified: fills stay inside lines on all 75 pages)
+const LS_PREFIX = 'colorplay:v1:fill:';
+const LS_INDEX = 'colorplay:v1:index';
+const MAX_UNDO = 15;
+
+/* ================= STATE ================= */
+let currentSet = 'set1';
+let currentIdx = 0;            // index within current set (0..24)
+let currentColor = '#FF5A5A';
+let eraserOn = false;
+let lineImg = null, W = 0, H = 0, mask = null;
+let undoStack = [];
+let saveTimer = null;
+let clearArmed = false, clearTimer = null;
+let taps = 0;
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const viewCanvas = $('art');
+const vctx = viewCanvas.getContext('2d');
+const fillCanvas = document.createElement('canvas');
+const fctx = fillCanvas.getContext('2d', { willReadFrequently: true });
+function hexToRgb(hex){ const n = parseInt(hex.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function pageKey(p){ return LS_PREFIX + p.set + ':' + p.num; }
+function readIndex(){ try { return JSON.parse(localStorage.getItem(LS_INDEX) || '{}'); } catch(e){ return {}; } }
+function writeIndex(idx){ try { localStorage.setItem(LS_INDEX, JSON.stringify(idx)); } catch(e){} }
+function currentPage(){ return PAGES.filter(p => p.set === currentSet)[currentIdx]; }
+
+/* ================= PICKER ================= */
+function renderPicker(){
+  const grid = $('grid'); grid.innerHTML = '';
+  const pages = PAGES.filter(p => p.set === currentSet);
+  const idx = readIndex();
+  pages.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'card';
+    b.setAttribute('aria-label', 'Color ' + p.title);
+    const started = idx[pageKey(p)];
+    b.innerHTML = '<img src="' + p.thumb + '" alt="" loading="lazy">' +
+      (started ? '<span class="done-dot" title="Started"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' : '') +
+      '<div class="nm">' + p.title + '</div><div class="pg">PAGE ' + p.num + ' / 25</div>';
+    b.addEventListener('click', () => openPage(i));
+    grid.appendChild(b);
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.set === currentSet));
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  currentSet = t.dataset.set; renderPicker();
+  document.getElementById('pickerView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}));
+
+/* ================= PALETTE ================= */
+(function buildPalette(){
+  const pal = $('palette');
+  PALETTE.forEach(([name, hex], i) => {
+    const b = document.createElement('button');
+    b.className = 'sw' + (i === 0 ? ' sel' : '');
+    b.style.background = hex;
+    b.setAttribute('aria-label', name);
+    b.title = name;
+    b.addEventListener('click', () => selectColor(hex, b, false));
+    pal.appendChild(b);
+  });
+  const e = document.createElement('button');
+  e.className = 'sw eraser'; e.id = 'eraserBtn'; e.setAttribute('aria-label', 'Eraser'); e.title = 'Eraser';
+  e.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6F675B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>';
+  e.addEventListener('click', () => selectColor('#FFFFFF', e, true));
+  pal.appendChild(e);
+})();
+function selectColor(hex, btn, isEraser){
+  currentColor = hex; eraserOn = isEraser;
+  document.querySelectorAll('.sw').forEach(s => s.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+/* ================= COLOR VIEW ================= */
+function openPage(i){
+  currentIdx = i;
+  $('pickerView').classList.add('hidden');
+  $('colorView').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+  loadPage();
+}
+function closeToPicker(saveFirst){
+  if (saveFirst) saveProgress(true);
+  $('colorView').classList.add('hidden');
+  $('pickerView').classList.remove('hidden');
+  renderPicker();
+  window.scrollTo({ top: 0 });
+}
+$('backBtn').addEventListener('click', () => closeToPicker(true));
+$('donePill').addEventListener('click', () => closeToPicker(true));
+
+function loadPage(){
+  const p = currentPage();
+  $('pageTitle').textContent = p.title;
+  $('pagePrompt').textContent = p.prompt;
+  $('pageNum').textContent = p.num + ' / 25';
+  $('setName').textContent = SET_NAMES[p.set];
+  $('prevBtn').disabled = currentIdx === 0;
+  $('nextBtn').disabled = currentIdx === 24;
+  $('canvasCard').classList.add('loading');
+  $('loadingNote').classList.remove('hidden');
+  undoStack = []; taps = 0; updateUndoBtn();
+  const img = new Image();
+  img.onload = () => {
+    lineImg = img; W = img.naturalWidth; H = img.naturalHeight;
+    viewCanvas.width = W; viewCanvas.height = H;
+    fillCanvas.width = W; fillCanvas.height = H;
+    buildMask(img);
+    fctx.fillStyle = '#FFFFFF'; fctx.fillRect(0, 0, W, H);
+    restoreProgress(p);
+    $('canvasCard').classList.remove('loading');
+    $('loadingNote').classList.add('hidden');
+    render();
+  };
+  img.onerror = () => { $('loadingNote').textContent = 'Could not load this page. Please try again.'; };
+  img.src = p.art;
+}
+function buildMask(img){
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, W, H).data;
+  mask = new Uint8Array(W * H);
+  for (let i = 0, j = 0; i < d.length; i += 4, j++){
+    const g = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10;
+    mask[j] = g < WALL ? 1 : 0;
+  }
+}
+function render(){
+  vctx.clearRect(0, 0, W, H);
+  vctx.drawImage(fillCanvas, 0, 0);
+  vctx.globalCompositeOperation = 'multiply';
+  vctx.drawImage(lineImg, 0, 0);
+  vctx.globalCompositeOperation = 'source-over';
+}
+
+/* ---- tap to fill (scanline flood fill, 4-connected, stops at walls) ---- */
+viewCanvas.addEventListener('pointerdown', e => {
+  if (!lineImg || !mask) return;
+  e.preventDefault();
+  const r = viewCanvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * W);
+  const y = Math.floor((e.clientY - r.top) / r.height * H);
+  if (x < 0 || y < 0 || x >= W || y >= H) return;
+  pushUndo();
+  const [cr, cg, cb] = hexToRgb(currentColor);
+  if (floodFill(x, y, cr, cg, cb)){
+    taps++;
+    render();
+    scheduleSave();
+  } else {
+    undoStack.pop(); // nothing changed; drop the snapshot
+  }
+});
+function floodFill(sx, sy, r, g, b){
+  const w = W, h = H;
+  const start = sy * w + sx;
+  if (mask[start]) return false;               // tapped a black line
+  const img = fctx.getImageData(0, 0, w, h);
+  const px = new Uint32Array(img.data.buffer);
+  const target = px[start];
+  const fill = ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;   // >>> 0: keep unsigned so target === fill works
+  if (target === fill) return false;
+  const stack = [[sx, sy]];
+  while (stack.length){
+    const cur = stack.pop();
+    const x = cur[0], y = cur[1];
+    let x0 = x;
+    while (x0 >= 0 && !mask[y * w + x0] && px[y * w + x0] === target) x0--;
+    x0++;
+    let x1 = x;
+    while (x1 < w && !mask[y * w + x1] && px[y * w + x1] === target) x1++;
+    x1--;
+    for (let i = x0; i <= x1; i++) px[y * w + i] = fill;
+    for (let k = 0; k < 2; k++){
+      const ny = k === 0 ? y - 1 : y + 1;
+      if (ny < 0 || ny >= h) continue;
+      let i = x0;
+      while (i <= x1){
+        while (i <= x1 && (mask[ny * w + i] || px[ny * w + i] !== target)) i++;
+        if (i > x1) break;
+        stack.push([i, ny]);
+        while (i <= x1 && !mask[ny * w + i] && px[ny * w + i] === target) i++;
+      }
+    }
+  }
+  fctx.putImageData(img, 0, 0);
+  return true;
+}
+
+/* ================= UNDO / CLEAR ================= */
+function pushUndo(){
+  try {
+    const t = document.createElement('canvas');
+    const tw = 500, th = Math.max(1, Math.round(500 * H / W));
+    t.width = tw; t.height = th;
+    t.getContext('2d').drawImage(fillCanvas, 0, 0, tw, th);
+    undoStack.push(t.toDataURL('image/png'));
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  } catch(e){}
+  updateUndoBtn();
+}
+function updateUndoBtn(){ $('undoBtn').style.opacity = undoStack.length ? '1' : '.45'; }
+$('undoBtn').addEventListener('click', () => {
+  const snap = undoStack.pop();
+  if (!snap) return;
+  const img = new Image();
+  img.onload = () => {
+    fctx.fillStyle = '#FFFFFF'; fctx.fillRect(0, 0, W, H);
+    fctx.drawImage(img, 0, 0, W, H);
+    taps = Math.max(0, taps - 1);
+    render(); scheduleSave(); updateUndoBtn();
+  };
+  img.src = snap;
+});
+$('clearBtn').addEventListener('click', () => {
+  if (!clearArmed){
+    clearArmed = true;
+    $('clearBtn').classList.add('armed');
+    $('clearLabel').textContent = 'Tap again to clear';
+    clearTimer = setTimeout(() => {
+      clearArmed = false;
+      $('clearBtn').classList.remove('armed');
+      $('clearLabel').textContent = 'Start over';
+    }, 3000);
+    return;
+  }
+  clearTimeout(clearTimer);
+  clearArmed = false;
+  $('clearBtn').classList.remove('armed');
+  $('clearLabel').textContent = 'Start over';
+  pushUndo();
+  fctx.fillStyle = '#FFFFFF'; fctx.fillRect(0, 0, W, H);
+  taps = 0;
+  render(); saveProgress(true);
+  toast('Fresh page — color it again!');
+});
+
+/* ================= SAVE PNG ================= */
+function compositePNG(){
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+  x.drawImage(fillCanvas, 0, 0);
+  x.globalCompositeOperation = 'multiply';
+  x.drawImage(lineImg, 0, 0);
+  x.globalCompositeOperation = 'source-over';
+  return c;
+}
+function downloadPNG(){
+  if (!lineImg) return;
+  const p = currentPage();
+  compositePNG().toBlob(blob => {
+    if (!blob){ toast('Could not save right now.'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'color-and-play-' + p.set + '-' + p.num + '-' + p.slug + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Picture saved! Find it in your downloads.');
+  }, 'image/png');
+}
+$('saveBtn').addEventListener('click', downloadPNG);
+$('savePill').addEventListener('click', downloadPNG);
+
+/* ================= PREV / NEXT ================= */
+$('prevBtn').addEventListener('click', () => { if (currentIdx > 0){ saveProgress(true); currentIdx--; loadPage(); } });
+$('nextBtn').addEventListener('click', () => { if (currentIdx < 24){ saveProgress(true); currentIdx++; loadPage(); } });
+
+/* ================= PERSISTENCE (localStorage) ================= */
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveProgress(false), 400);
+}
+function saveProgress(immediate){
+  if (!lineImg) return;
+  const p = currentPage();
+  const key = pageKey(p);
+  try {
+    const data = fillCanvas.toDataURL('image/png');
+    localStorage.setItem(key, JSON.stringify({ taps: taps, data: data, at: Date.now() }));
+    const idx = readIndex(); idx[key] = { taps: taps, at: Date.now() }; writeIndex(idx);
+  } catch(e){
+    // storage full: evict the oldest saved pages, then retry once
+    try {
+      const idx = readIndex();
+      const keys = Object.keys(idx).sort((a, b) => idx[a].at - idx[b].at);
+      for (let i = 0; i < Math.min(5, keys.length); i++){
+        localStorage.removeItem(keys[i]); delete idx[keys[i]];
+      }
+      writeIndex(idx);
+      const data = fillCanvas.toDataURL('image/png');
+      localStorage.setItem(key, JSON.stringify({ taps: taps, data: data, at: Date.now() }));
+      const idx2 = readIndex(); idx2[key] = { taps: taps, at: Date.now() }; writeIndex(idx2);
+    } catch(e2){
+      if (immediate) toast('Storage is full — this page could not be saved.');
+    }
+  }
+}
+function restoreProgress(p){
+  let raw = null;
+  try { raw = localStorage.getItem(pageKey(p)); } catch(e){}
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.data) return;
+    const img = new Image();
+    img.onload = () => {
+      fctx.drawImage(img, 0, 0, W, H);
+      taps = saved.taps || 0;
+      render();
+      if (taps > 0) toast('Welcome back — your coloring was saved!');
+    };
+    img.src = saved.data;
+  } catch(e){}
+}
+
+/* ================= INIT ================= */
+renderPicker();
+updateUndoBtn();
+</script>
+</body>
+</html>
